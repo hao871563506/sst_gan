@@ -55,7 +55,7 @@ class SRGAN():
             metrics=['accuracy'])
 
         # Configure data loader
-        self.dataset_name = 'img_align_celeba'
+        self.dataset_name = 'img_align_celeba_small'
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.hr_height, self.hr_width))
 
@@ -270,4 +270,5 @@ class SRGAN():
 
 if __name__ == '__main__':
     gan = SRGAN()
-    gan.train(epochs=30000, batch_size=1, sample_interval=50)
+    #gan.train(epochs=30000, batch_size=1, sample_interval=50)
+    gan.train(epochs=10, batch_size=1, sample_interval=50)
