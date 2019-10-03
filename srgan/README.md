@@ -49,7 +49,7 @@ After that, you can successfully run srgan.py.
 *pip install git+https://www.github.com/keras-team/keras-contrib.git*
 
 <br>
-Same as above, you need to create conda env sst in habanero and install all packages except tensorflow-gpu==1.14 instead of tensorflow==1.14. Once finished, enter:  
+Same as above, you need to have anaconda or miniconda under your path in habanero first, then create conda env sst in habanero and install all packages except tensorflow-gpu==1.14 instead of tensorflow==1.14. Once finished, enter:  
 
 ->**srun --pty -t 0-02:00:00 --constraint=p100 --gres=gpu -A ocp /bin/bash**
 
@@ -65,3 +65,5 @@ To see the dynamic output result, you can use:
 1. For the setting of gpu and cpu resource, you can modify run.sh file. 
 
 2. Try to put all folders under /rigel/ocp/users/ or /rigel/ocp/projects/ to save the disk space of your home directory. 
+
+3. To install anaconda or miniconda to your habanero, you can download the installation package of, say miniconda, in your local computer, and scp that file to the path in your habanero. After that, you can unzip the installation package and begin the installation process. 
