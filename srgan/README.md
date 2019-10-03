@@ -55,7 +55,7 @@ Same as above, you need to create conda env sst in habanero and install all pack
 
 Now, we can import cuda and cudnn module on a p100 gpu node. I write all the command in the run.sh file so that we can just sbatch run.sh to load cuda, cudnn, and run the srgan.py file. 
 
-->**sbatch run.py**
+->**sbatch run.sh**
 
 To see the dynamic output result, you can use:
 
