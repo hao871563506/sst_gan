@@ -14,7 +14,7 @@ This folder is for testing srgan source code in a gpu and cpu environment.
 *pip install git+https://www.github.com/keras-team/keras-contrib.git*
 
 <br>
-After having anaconda or miniconda installed in your local computer, create a new env:
+After having anaconda or miniconda installed in your local computer, create a new env named "sst":
 
 ->**conda create -n sst python=3.5 anaconda**
 
