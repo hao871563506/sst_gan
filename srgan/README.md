@@ -1,9 +1,8 @@
-## SRGAN
+# SRGAN
 
 This folder is for testing srgan source code in a gpu and cpu environment. 
-<br>
 
-### Runing in local computer
+## Runing in local computer
 
 *python==3.5*
 
@@ -32,9 +31,7 @@ Once entered, run the command below:
 
 After that, you can successfully run srgan.py.
 
-<br>
-
-### Runing in Habanero
+## Runing in Habanero
 
 *cuda==10.0*
 
@@ -61,7 +58,7 @@ To see the dynamic output result, you can use:
 
 ->**tail -f (the output file of slrum)**
 
-### Notice 
+## Notice 
 1. For the setting of gpu and cpu resource, you can modify run.sh file. 
 
 2. Try to put all folders under /rigel/ocp/users/ or /rigel/ocp/projects/ to save the disk space of your home directory. 
