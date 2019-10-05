@@ -22,11 +22,14 @@ from keras.applications import VGG19
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 import datetime
+
+########################################################
 #import matplotlib.pyplot as plt
 # newly added for saving plots in server
 import matplotlib
 matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
+#######################################################
 
 import sys
 from data_loader import DataLoader
