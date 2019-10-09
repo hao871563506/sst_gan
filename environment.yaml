@@ -1,0 +1,29 @@
+name: sst_superresolution
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - jupyterlab
+  - bottleneck
+  - cartopy
+  - dask
+  - distributed
+  - h5py
+  - hdf5
+  - matplotlib
+  - netcdf4
+  - numpy
+  - pandas
+  - pytest
+  - rasterio
+  - scipy
+  - zarr
+  - numcodecs
+  - xarray
+  - xgcm
+  - xhistogram
+  - xrft
+  # ml libraries
+  - tensorflow-gpu
+  - keras
