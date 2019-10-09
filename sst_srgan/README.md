@@ -14,4 +14,6 @@ Then, because sst data is stored in zarr format, you should install xarray and n
 
 ->**conda install -c conda-forge numcodecs**
 
+Notice all the commands above should be run in your virtual conda environment. 
+
 ## Runing in Habanero
