@@ -1,66 +1,17 @@
-# SRGAN
+# SST_SRGAN
 
-This folder is for testing srgan source code in a gpu and cpu environment. 
+This folder is for testing srgan source code for our sst datasets. 
 
 ## Runing in local computer
 
-*python==3.5*
+In order to run srgan for our sst datasets, you need to first follow the link below to install all environment packages required for srgan. 
 
-*tensorflow==1.14*
+https://github.com/rabernat/sst_superresolution/blob/master/srgan/README.md
 
-*keras==2.3.0*
+Then, because sst data is stored in zarr format, you should install xarray and numcodecs to read the data successfully:
 
-*pip install git+https://www.github.com/keras-team/keras-contrib.git*
+->**pip install xarray==0.12.3 zarr gcsfs intake intake-xarray**
 
-<br>
-After having anaconda or miniconda installed in your local computer, create a new env named "sst":
-
-->**conda create -n sst python=3.5 anaconda**
-
-Then activate sst env by:
-
-->**conda activate sst**
-
-Once entered, run the command below:
-
-->**pip install tensorflow==1.14 --user**
-
-->**pip install keras==2.3.0**
-
-->**pip install git+https://www.github.com/keras-team/keras-contrib.git**
-
-After that, you can successfully run srgan.py.
+->**conda install -c conda-forge numcodecs**
 
 ## Runing in Habanero
-
-*cuda==10.0*
-
-*cudnn==7.6.2*
-
-*python==3.5*
-
-*tensorflow-gpu==1.14*
-
-*keras==2.3.0*
-
-*pip install git+https://www.github.com/keras-team/keras-contrib.git*
-
-<br>
-Same as above, you need to have anaconda or miniconda under your path in habanero first, then create conda env sst in habanero and install all packages except tensorflow-gpu==1.14 instead of tensorflow==1.14. Once finished, enter:  
-
-->**srun --pty -t 0-02:00:00 --constraint=p100 --gres=gpu -A ocp /bin/bash**
-
-Now, we can import cuda and cudnn module on a p100 gpu node. I write all the command in the run.sh file so that we can just sbatch run.sh to load cuda, cudnn, and run the srgan.py file. 
-
-->**sbatch run.sh**
-
-To see the dynamic output result, you can use:
-
-->**tail -f (the output file of slrum)**
-
-## Notice 
-1. For the setting of gpu and cpu resource, you can modify run.sh file. 
-
-2. Try to put all folders under /rigel/ocp/users/ or /rigel/ocp/projects/ to save the disk space of your home directory. 
-
-3. To install anaconda or miniconda to your habanero, you can download the installation package of, say miniconda, in your local computer, and scp that file to the path in your habanero. After that, you can unzip the installation package and begin the installation process. 
