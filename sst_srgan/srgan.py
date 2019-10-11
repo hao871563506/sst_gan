@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 #######################################################
 
 import sys
-from data_loader import DataLoader
+from data_loader_sst import DataLoader
 import numpy as np
 import os
 
@@ -41,9 +41,9 @@ import keras.backend as K
 class SRGAN():
     def __init__(self):
         # Input shape
-        self.channels = 3
-        self.lr_height = 64                 # Low resolution height
-        self.lr_width = 64                  # Low resolution width
+        self.channels = 1
+        self.lr_height = 128                 # Low resolution height
+        self.lr_width = 128                  # Low resolution width
         self.lr_shape = (self.lr_height, self.lr_width, self.channels)
         self.hr_height = self.lr_height*4   # High resolution height
         self.hr_width = self.lr_width*4     # High resolution width
@@ -63,7 +63,7 @@ class SRGAN():
             metrics=['accuracy'])
 
         # Configure data loader
-        self.dataset_name = 'img_align_celeba_small'
+        self.dataset_name = 'img_sst'
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.hr_height, self.hr_width))
 
@@ -92,7 +92,9 @@ class SRGAN():
         fake_hr = self.generator(img_lr)
 
         # Extract image features of the generated img
-        fake_features = self.vgg(fake_hr)
+        fake_hr_temp = Concatenate([fake_hr, fake_hr], 3)
+        fake_hr_temp = Concatenate([fake_hr_temp, fake_hr], 3)
+        fake_features = self.vgg(fake_hr_temp)
 
         # For the combined model we will only train the generator
         self.discriminator.trainable = False
@@ -116,8 +118,8 @@ class SRGAN():
         # See architecture at: https://github.com/keras-team/keras/blob/master/keras/applications/vgg19.py
         vgg.outputs = [vgg.layers[9].output]
 
-        img = Input(shape=self.hr_shape)
-
+        #img = Input(shape=self.hr_shape)
+        img = Input(shape=(self.hr_height, self.hr_width, 3))
         # Extract image features
         img_features = vgg(img)
 
@@ -231,7 +233,9 @@ class SRGAN():
             valid = np.ones((batch_size,) + self.disc_patch)
 
             # Extract ground truth image features using pre-trained VGG19 model
-            image_features = self.vgg.predict(imgs_hr)
+            imgs_hr_temp = Concatenate([imgs_hr, imgs_hr], 3)
+            imgs_hr_temp = Concatenate([imgs_hr_temp, imgs_hr], 3)
+            image_features = self.vgg.predict(imgs_hr_temp)
 
             # Train the generators
             g_loss = self.combined.train_on_batch([imgs_lr, imgs_hr], [valid, image_features])
