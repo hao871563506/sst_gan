@@ -27,30 +27,35 @@ import datetime
 #import matplotlib.pyplot as plt
 # newly added for saving plots in server
 import matplotlib
-matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
+matplotlib.use('Agg')  # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
 #######################################################
 
 import sys
-from data_loader import DataLoader
+from src.data_loader_faceimg import DataLoader
 import numpy as np
 import os
 
 import keras.backend as K
 
 class SRGAN():
-    def __init__(self):
+    def __init__(self, dataset_dir, upscale_power_factor, n_residual_blocks):
         # Input shape
         self.channels = 3
-        self.lr_height = 64                 # Low resolution height
-        self.lr_width = 64                  # Low resolution width
-        self.lr_shape = (self.lr_height, self.lr_width, self.channels)
-        self.hr_height = self.lr_height*4   # High resolution height
-        self.hr_width = self.lr_width*4     # High resolution width
+        self.hr_height = 256  # High resolution height
+        self.hr_width = 256  # High resolution width
+
+        assert isinstance(upscale_power_factor, int), "upscale power factor must be int!"
+        self.upscale_power_factor = upscale_power_factor
+        self.upscale_factor = 2 ** self.upscale_power_factor
+        self.lr_height = int(self.hr_height / self.upscale_factor)  # Low resolution height
+        self.lr_width = int(self.hr_width / self.upscale_factor)  # Low resolution width
+
         self.hr_shape = (self.hr_height, self.hr_width, self.channels)
+        self.lr_shape = (self.lr_height, self.lr_width, self.channels)
 
         # Number of residual blocks in the generator
-        self.n_residual_blocks = 16
+        self.n_residual_blocks = n_residual_blocks
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -63,9 +68,10 @@ class SRGAN():
             metrics=['accuracy'])
 
         # Configure data loader
-        self.dataset_name = 'img_align_celeba_small'
-        self.data_loader = DataLoader(dataset_name=self.dataset_name,
-                                      img_res=(self.hr_height, self.hr_width))
+        self.dataset_dir = dataset_dir
+        self.data_loader = DataLoader(dataset_dir=self.dataset_dir,
+                                      img_res=(self.hr_height, self.hr_width),
+                                      lr_res=(self.lr_height, self.lr_width))
 
         # Calculate output shape of D (PatchGAN)
         patch = int(self.hr_height / 2**4)
@@ -160,11 +166,12 @@ class SRGAN():
         c2 = Add()([c2, c1])
 
         # Upsampling
-        u1 = deconv2d(c2)
-        u2 = deconv2d(u1)
+        u = c2
+        for upx in range(self.upscale_power_factor):
+            u = deconv2d(u)
 
         # Generate high resolution output
-        gen_hr = Conv2D(self.channels, kernel_size=9, strides=1, padding='same', activation='tanh')(u2)
+        gen_hr = Conv2D(self.channels, kernel_size=9, strides=1, padding='same', activation='tanh')(u)
 
         return Model(img_lr, gen_hr)
 
@@ -196,7 +203,7 @@ class SRGAN():
 
         return Model(d0, validity)
 
-    def train(self, epochs, batch_size=1, sample_interval=50):
+    def train(self, epochs, sample_rslt_dir, batch_size=1, sample_interval=50):
 
         start_time = datetime.datetime.now()
 
@@ -242,10 +249,11 @@ class SRGAN():
 
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
-                self.sample_images(epoch)
+                self.sample_images(epoch, sample_rslt_dir)
 
-    def sample_images(self, epoch):
-        os.makedirs('images/%s' % self.dataset_name, exist_ok=True)
+    def sample_images(self, epoch, sample_rslt_dir):
+        if not os.path.exists(sample_rslt_dir):
+            os.makedirs(sample_rslt_dir)
         r, c = 2, 2
 
         imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2, is_testing=True)
@@ -266,17 +274,31 @@ class SRGAN():
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
-        fig.savefig("images/%s/%d.png" % (self.dataset_name, epoch))
+        fig.savefig(sample_rslt_dir + "/{}.png".format(epoch))
+        #fig.savefig("images/%s/%d.png" % (self.dataset_name, epoch))
         plt.close()
 
         # Save low resolution images for comparison
         for i in range(r):
             fig = plt.figure()
             plt.imshow(imgs_lr[i])
-            fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_name, epoch, i))
+            fig.savefig(sample_rslt_dir + "{}_lowers_{}.png".format(epoch, i))
+            #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_name, epoch, i))
             plt.close()
 
+
+
 if __name__ == '__main__':
-    gan = SRGAN()
+    import git
+    from src.utils import addDateTime
+
+    repo = git.Repo('.', search_parent_directories=True)
+    repo_dir = repo.working_tree_dir  # sst_supverresolution
+    sample_rslt_dir = repo_dir + "/{}/{}".format("faceimg_rslts", "test")
+    sample_rslt_dir = addDateTime(sample_rslt_dir)
+
+    dataset_name = "img_align_celeba_small"
+    dataset_dir = repo_dir + "/datasets/{}".format(dataset_name)
+    gan = SRGAN(dataset_dir=dataset_dir, upscale_power_factor=4, n_residual_blocks=16)
     #gan.train(epochs=30000, batch_size=1, sample_interval=50)
-    gan.train(epochs=10, batch_size=1, sample_interval=50)
+    gan.train(epochs=10, batch_size=1, sample_interval=50, sample_rslt_dir=sample_rslt_dir)

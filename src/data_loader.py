@@ -7,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 np_array_save_path = "./numpy_array"
-path = os.path.join(np_array_save_path, "hr_lr")
+path = os.path.join(np_array_save_path, "hr_lr.npz")
+
+# TODO: dataset should be put under sst_superresolution/datasets/
 
 class DataLoader():
     def __init__(self, dataset_name, img_res=(512, 512), downsize_factor=(4, 4)):
@@ -42,12 +44,13 @@ class DataLoader():
                 except:
                     print(np_array_save_path + " created error")
 
-            np.save(path,(np.array(hr),np.array(lr)))
+            np.savez(path, name1=np.array(hr), name2=np.array(lr))
             print("numpy array successfully saved")
 
         hr,lr = np.load(path)
-        self.hr = hr
-        self.lr = lr
+        data = np.load(path)
+        self.hr = data['name1']
+        self.lr = data['name2']
 
     def load_data(self, batch_size=1, is_testing=False):
         #data_type = "train" if not is_testing else "test"
@@ -89,4 +92,6 @@ class DataLoader():
 
     def reset_pointer(self):
         self.pointer = 0
+
+
 

@@ -1,17 +1,19 @@
-import scipy
+import scipy.misc
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class DataLoader():
-    def __init__(self, dataset_name, img_res=(128, 128)):
-        self.dataset_name = dataset_name
+    def __init__(self, dataset_dir, img_res=(128, 128), lr_res=(64, 64)):
+        self.dataset_dir = dataset_dir
         self.img_res = img_res
+        self.lr_res = lr_res
 
     def load_data(self, batch_size=1, is_testing=False):
         data_type = "train" if not is_testing else "test"
-        
-        path = glob('./datasets/%s/*' % (self.dataset_name))
+
+        path = glob(self.dataset_dir + "/*")
 
         batch_images = np.random.choice(path, size=batch_size)
 
@@ -21,9 +23,9 @@ class DataLoader():
             img = self.imread(img_path)
 
             h, w = self.img_res
-            low_h, low_w = int(h / 4), int(w / 4)
+            low_h, low_w = self.lr_res
 
-            img_hr = scipy.misc.imresize(img, self.img_res)
+            img_hr = scipy.misc.imresize(img, self.img_res)  # original size, 218, 173
             img_lr = scipy.misc.imresize(img, (low_h, low_w))
 
             # If training => do random flip
@@ -42,3 +44,9 @@ class DataLoader():
 
     def imread(self, path):
         return scipy.misc.imread(path, mode='RGB').astype(np.float)
+
+
+if __name__ == '__main__':
+    print(scipy.__version__)
+    img = scipy.misc.imread("/Users/leah/Columbia/courses/19fall/capstone/sst_superresolution/datasets/img_align_celeba_small/000001.jpg")
+    print(img.shape)
