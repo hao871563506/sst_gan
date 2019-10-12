@@ -97,10 +97,10 @@ class SRGAN():
 
         # Generate high res. version from low res.
         fake_hr = self.generator(img_lr)
-
         # Extract image features of the generated img
-        fake_hr_temp = Concatenate([fake_hr, fake_hr], 3)
-        fake_hr_temp = Concatenate([fake_hr_temp, fake_hr], 3)
+        fake_hr_temp = Concatenate(axis=-1)([fake_hr, fake_hr])
+        fake_hr_temp = Concatenate(axis=-1)([fake_hr_temp, fake_hr])
+        #fake_hr_temp = K.tile(fake_hr, (1, 1, 1, 3))
         fake_features = self.vgg(fake_hr_temp)
 
         # For the combined model we will only train the generator
@@ -217,7 +217,8 @@ class SRGAN():
 
             # Sample images and their conditioning counterparts
             imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
-
+            imgs_hr = np.expand_dims(imgs_hr, axis=3)
+            imgs_lr = np.expand_dims(imgs_lr, axis=3)
             # From low res. image generate high res. version
             fake_hr = self.generator.predict(imgs_lr)
 
@@ -235,13 +236,13 @@ class SRGAN():
 
             # Sample images and their conditioning counterparts
             imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
-
+            imgs_hr = np.expand_dims(imgs_hr, axis=3)
+            imgs_lr = np.expand_dims(imgs_lr, axis=3)
             # The generators want the discriminators to label the generated images as real
             valid = np.ones((batch_size,) + self.disc_patch)
-
+            # print(imgs_hr)
             # Extract ground truth image features using pre-trained VGG19 model
-            imgs_hr_temp = Concatenate([imgs_hr, imgs_hr], 3)
-            imgs_hr_temp = Concatenate([imgs_hr_temp, imgs_hr], 3)
+            imgs_hr_temp = np.repeat(imgs_hr, 3, axis=-1)
             image_features = self.vgg.predict(imgs_hr_temp)
 
             # Train the generators
@@ -249,9 +250,7 @@ class SRGAN():
 
             elapsed_time = datetime.datetime.now() - start_time
             # Plot the progress
-            print ("%d time: %s" % (epoch, elapsed_time))
-
-            # If at save interval => save generated image samples
+            print("%d time: %s" % (epoch, elapsed_time))
             if epoch % sample_interval == 0:
                 self.sample_images(epoch, sample_rslt_dir)
 
@@ -262,6 +261,8 @@ class SRGAN():
         n_rows, n_cols = 2, 2
 
         imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2, is_testing=True)
+        imgs_hr = np.expand_dims(imgs_hr, axis=3)
+        imgs_lr = np.expand_dims(imgs_lr, axis=3)
         fake_hr = self.generator.predict(imgs_lr)
 
         # Rescale images 0 - 1
@@ -293,6 +294,6 @@ class SRGAN():
 
 
 if __name__ == '__main__':
-    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16)
+    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16, )
     #gan.train(epochs=30000, batch_size=1, sample_interval=50)
     gan.train(epochs=10, batch_size=1, sample_interval=50)
