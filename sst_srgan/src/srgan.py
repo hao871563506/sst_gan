@@ -40,7 +40,7 @@ import keras.backend as K
 
 
 class SRGAN():
-    def __init__(self, dataset_name, upscale_power_factor, n_residual_blocks):
+    def __init__(self, dataset_name, upscale_power_factor, n_residual_blocks, local, local_path=None):
         # Input shape
         self.channels = 1
         self.hr_height = 512  # High resolution height
@@ -71,7 +71,8 @@ class SRGAN():
         # Configure data loader
         self.dataset_name = dataset_name  #'img_sst'
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
-                                      img_res=(self.hr_height, self.hr_width))
+                                      img_res=(self.hr_height, self.hr_width),
+                                      local=local, local_path=local_path)
 
         # Calculate output shape of D (PatchGAN)
         patch = int(self.hr_height / 2**4)

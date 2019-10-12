@@ -6,49 +6,52 @@ from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 
-np_array_save_path = "./numpy_array"
-path = os.path.join(np_array_save_path, "hr_lr.npz")
-
-# TODO: dataset should be put under sst_superresolution/datasets/
+SST_DATASETS_PATH = "./numpy_array"
 
 class DataLoader():
-    def __init__(self, dataset_name, img_res=(512, 512), downsize_factor=(4, 4)):
+    def __init__(self, dataset_name, img_res=(512, 512), downsize_factor=(4, 4), local=False, local_path=None):
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor
-        if not os.path.exists(path):
-            uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:10]
-            dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
-            ds = xr.combine_nested(dsets, 'timestep')
-            print(ds)
-            # to use ds.SST[0] to calculate nan value for all timestep 
-            num_nans = ds.SST[0].isnull().sum(dim=['x', 'y']).load()
-            sst_valid = ds.SST.where(num_nans == 0, drop=True)
-            print(sst_valid)
-            sst_coarse = sst_valid.coarsen(x=self.downsize_factor[0], y=self.downsize_factor[1]).mean()       
-            print(sst_coarse)
 
-            
-            # hr = sst_valid.load().values
-            # lr = sst_coarse.load().values
-            hr = []
-            lr = []
-            for timestep in range(sst_valid.shape[0]):
-                for region in range(sst_valid.shape[1]):
-                    hr.append(sst_valid[timestep, region].load().values)
-                    lr.append(sst_coarse[timestep, region].load().values)
-            print("got values!")
-            if not os.path.exists(np_array_save_path):
-                try:
-                    os.makedirs(np_array_save_path)
-                except:
-                    print(np_array_save_path + " created error")
+        if local:
+            # load from test dataset
+            assert local_path is not None
+            sst_dataset_path = local_path + "/{}.npz".format(self.dataset_name)
+        else:
+            sst_dataset_path = os.path.join(SST_DATASETS_PATH, "{}.npz".format(dataset_name))
+            if not os.path.exists(sst_dataset_path):
+                uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:10]
+                dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
+                ds = xr.combine_nested(dsets, 'timestep')
+                print(ds)
+                # to use ds.SST[0] to calculate nan value for all timestep
+                num_nans = ds.SST[0].isnull().sum(dim=['x', 'y']).load()
+                sst_valid = ds.SST.where(num_nans == 0, drop=True)
+                print(sst_valid)
+                sst_coarse = sst_valid.coarsen(x=self.downsize_factor[0], y=self.downsize_factor[1]).mean()
+                print(sst_coarse)
 
-            np.savez(path, name1=np.array(hr), name2=np.array(lr))
-            print("numpy array successfully saved")
+                # hr = sst_valid.load().values
+                # lr = sst_coarse.load().values
+                hr = []
+                lr = []
+                for timestep in range(sst_valid.shape[0]):
+                    for region in range(sst_valid.shape[1]):
+                        hr.append(sst_valid[timestep, region].load().values)
+                        lr.append(sst_coarse[timestep, region].load().values)
+                print("got values!")
+                if not os.path.exists(SST_DATASETS_PATH):
+                    try:
+                        os.makedirs(SST_DATASETS_PATH)
+                    except:
+                        print(SST_DATASETS_PATH + " created error")
 
-        hr,lr = np.load(path)
-        data = np.load(path)
+                np.savez(sst_dataset_path, name1=np.array(hr), name2=np.array(lr))
+                print("numpy array successfully saved")
+
+        hr,lr = np.load(sst_dataset_path)
+        data = np.load(sst_dataset_path)
         self.hr = data['name1']
         self.lr = data['name2']
 
