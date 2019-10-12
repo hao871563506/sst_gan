@@ -46,7 +46,3 @@ class DataLoader():
         return scipy.misc.imread(path, mode='RGB').astype(np.float)
 
 
-if __name__ == '__main__':
-    print(scipy.__version__)
-    img = scipy.misc.imread("/Users/leah/Columbia/courses/19fall/capstone/sst_superresolution/datasets/img_align_celeba_small/000001.jpg")
-    print(img.shape)

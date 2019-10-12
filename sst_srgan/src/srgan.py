@@ -32,30 +32,31 @@ import matplotlib.pyplot as plt
 #######################################################
 
 import sys
-from src.data_loader_faceimg import DataLoader
+from sst_srgan.src.data_loader import DataLoader
 import numpy as np
 import os
 
 import keras.backend as K
 
+
 class SRGAN():
-    def __init__(self, dataset_dir, upscale_power_factor, n_residual_blocks):
+    def __init__(self, dataset_name, upscale_power_factor, n_residual_blocks):
         # Input shape
-        self.channels = 3
-        self.hr_height = 256  # High resolution height
-        self.hr_width = 256  # High resolution width
+        self.channels = 1
+        self.hr_height = 512  # High resolution height
+        self.hr_width = 512  # High resolution width
 
         assert isinstance(upscale_power_factor, int), "upscale power factor must be int!"
         self.upscale_power_factor = upscale_power_factor
-        self.upscale_factor = 2 ** self.upscale_power_factor
-        self.lr_height = int(self.hr_height / self.upscale_factor)  # Low resolution height
-        self.lr_width = int(self.hr_width / self.upscale_factor)  # Low resolution width
+        self.upscale_factor = 2**self.upscale_power_factor
+        self.lr_height = int(self.hr_height/self.upscale_factor)                 # Low resolution height
+        self.lr_width = int(self.hr_width/self.upscale_factor)                  # Low resolution width
 
         self.hr_shape = (self.hr_height, self.hr_width, self.channels)
         self.lr_shape = (self.lr_height, self.lr_width, self.channels)
 
         # Number of residual blocks in the generator
-        self.n_residual_blocks = n_residual_blocks
+        self.n_residual_blocks = n_residual_blocks #16
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -68,10 +69,9 @@ class SRGAN():
             metrics=['accuracy'])
 
         # Configure data loader
-        self.dataset_dir = dataset_dir
-        self.data_loader = DataLoader(dataset_dir=self.dataset_dir,
-                                      img_res=(self.hr_height, self.hr_width),
-                                      lr_res=(self.lr_height, self.lr_width))
+        self.dataset_name = dataset_name  #'img_sst'
+        self.data_loader = DataLoader(dataset_name=self.dataset_name,
+                                      img_res=(self.hr_height, self.hr_width))
 
         # Calculate output shape of D (PatchGAN)
         patch = int(self.hr_height / 2**4)
@@ -98,7 +98,9 @@ class SRGAN():
         fake_hr = self.generator(img_lr)
 
         # Extract image features of the generated img
-        fake_features = self.vgg(fake_hr)
+        fake_hr_temp = Concatenate([fake_hr, fake_hr], 3)
+        fake_hr_temp = Concatenate([fake_hr_temp, fake_hr], 3)
+        fake_features = self.vgg(fake_hr_temp)
 
         # For the combined model we will only train the generator
         self.discriminator.trainable = False
@@ -111,7 +113,6 @@ class SRGAN():
                               loss_weights=[1e-3, 1],
                               optimizer=optimizer)
 
-
     def build_vgg(self):
         """
         Builds a pre-trained VGG19 model that outputs image features extracted at the
@@ -122,8 +123,8 @@ class SRGAN():
         # See architecture at: https://github.com/keras-team/keras/blob/master/keras/applications/vgg19.py
         vgg.outputs = [vgg.layers[9].output]
 
-        img = Input(shape=self.hr_shape)
-
+        #img = Input(shape=self.hr_shape)
+        img = Input(shape=(self.hr_height, self.hr_width, 3))
         # Extract image features
         img_features = vgg(img)
 
@@ -238,7 +239,9 @@ class SRGAN():
             valid = np.ones((batch_size,) + self.disc_patch)
 
             # Extract ground truth image features using pre-trained VGG19 model
-            image_features = self.vgg.predict(imgs_hr)
+            imgs_hr_temp = Concatenate([imgs_hr, imgs_hr], 3)
+            imgs_hr_temp = Concatenate([imgs_hr_temp, imgs_hr], 3)
+            image_features = self.vgg.predict(imgs_hr_temp)
 
             # Train the generators
             g_loss = self.combined.train_on_batch([imgs_lr, imgs_hr], [valid, image_features])
@@ -254,7 +257,8 @@ class SRGAN():
     def sample_images(self, epoch, sample_rslt_dir):
         if not os.path.exists(sample_rslt_dir):
             os.makedirs(sample_rslt_dir)
-        r, c = 2, 2
+        #os.makedirs('images/%s' % self.dataset_dir, exist_ok=True)
+        n_rows, n_cols = 2, 2
 
         imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2, is_testing=True)
         fake_hr = self.generator.predict(imgs_lr)
@@ -266,39 +270,28 @@ class SRGAN():
 
         # Save generated images and the high resolution originals
         titles = ['Generated', 'Original']
-        fig, axs = plt.subplots(r, c)
+        fig, axs = plt.subplots(n_rows, n_cols)
         cnt = 0
-        for row in range(r):
+        for row in range(n_rows):
             for col, image in enumerate([fake_hr, imgs_hr]):
                 axs[row, col].imshow(image[row])
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
-        fig.savefig(sample_rslt_dir + "/{}.png".format(epoch))
-        #fig.savefig("images/%s/%d.png" % (self.dataset_name, epoch))
+        fig.savefig(sample_rslt_dir + "/{}.png",format(epoch))
+        #fig.savefig("images/%s/%d.png" % (self.dataset_dir, epoch))
         plt.close()
 
         # Save low resolution images for comparison
-        for i in range(r):
+        for i in range(n_rows):
             fig = plt.figure()
             plt.imshow(imgs_lr[i])
-            fig.savefig(sample_rslt_dir + "{}_lowers_{}.png".format(epoch, i))
-            #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_name, epoch, i))
+            fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
+            #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_dir, epoch, i))
             plt.close()
 
 
-
 if __name__ == '__main__':
-    import git
-    from src.utils import addDateTime
-
-    repo = git.Repo('.', search_parent_directories=True)
-    repo_dir = repo.working_tree_dir  # sst_supverresolution
-    sample_rslt_dir = repo_dir + "/{}/{}".format("faceimg_rslts", "test")
-    sample_rslt_dir = addDateTime(sample_rslt_dir)
-
-    dataset_name = "img_align_celeba_small"
-    dataset_dir = repo_dir + "/datasets/{}".format(dataset_name)
-    gan = SRGAN(dataset_dir=dataset_dir, upscale_power_factor=4, n_residual_blocks=16)
+    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16)
     #gan.train(epochs=30000, batch_size=1, sample_interval=50)
-    gan.train(epochs=10, batch_size=1, sample_interval=50, sample_rslt_dir=sample_rslt_dir)
+    gan.train(epochs=10, batch_size=1, sample_interval=50)
