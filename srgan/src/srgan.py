@@ -28,7 +28,7 @@ matplotlib.use('Agg')  # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
 #######################################################
 
-from srgan.src.data_loader import DataLoader
+from src.data_loader import DataLoader
 import numpy as np
 import os
 

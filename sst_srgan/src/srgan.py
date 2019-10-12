@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 #######################################################
 
 import sys
-from sst_srgan.src.data_loader import DataLoader
+from src.data_loader import DataLoader
 import numpy as np
 import os
 
