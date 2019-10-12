@@ -294,6 +294,6 @@ class SRGAN():
 
 
 if __name__ == '__main__':
-    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16, )
+    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16)
     #gan.train(epochs=30000, batch_size=1, sample_interval=50)
     gan.train(epochs=10, batch_size=1, sample_interval=50)

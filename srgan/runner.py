@@ -19,7 +19,7 @@ def main(job_name, dataset_name, upscale_power_factor, n_residual_blocks, epochs
     repo = git.Repo('.', search_parent_directories=True)
     repo_dir = repo.working_tree_dir  # sst_supverresolution
     dataset_dir = repo_dir + "/srgan/datasets/{}".format(dataset_name)
-    sample_rslt_dir = repo_dir + "/{}/{}".format(root_rslt_dir, job_name)
+    sample_rslt_dir = repo_dir + "/srgan/{}/{}".format(root_rslt_dir, job_name)
     sample_rslt_dir = addDateTime(sample_rslt_dir)
 
     gan = SRGAN(dataset_dir=dataset_dir, upscale_power_factor=upscale_power_factor,

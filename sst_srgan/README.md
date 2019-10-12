@@ -21,7 +21,7 @@
    pip install scipy==1.1.0
    pip install pillow
    pip install click
-   pip install git
+   pip install git-repo
    # to preprocess sst data from zarr format to npz format we need
    pip install xarray==0.12.3 zarr gcsfs intake intake-xarray
    conda install -c conda-forge numcodecs
