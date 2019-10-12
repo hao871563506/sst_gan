@@ -29,7 +29,7 @@
 
 4. After that, you can test by running
 
-`python runner.py --job_name=test --dataset_name=img_align_celeba_small --epochs=10 --batch_size=1`
+`python runner.py --job_name=test --dataset_name=img_align_celeba_small --epochs=10 --batch_size=1 --local`
 
 5. Check the result under `face_img_rslts` folder!
 
