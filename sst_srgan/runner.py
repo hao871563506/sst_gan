@@ -1,8 +1,8 @@
 import git
 import click
 
-from sst_srgan.src.srgan import SRGAN
-from sst_srgan.src.utils import addDateTime
+from src.srgan import SRGAN
+from src.utils import addDateTime
 
 @click.command()
 @click.option("--job_name", default="test", help="job name, which would be the predix of the result direcotry")
