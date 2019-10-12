@@ -280,7 +280,7 @@ class SRGAN():
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
-        fig.savefig(sample_rslt_dir + "/{}.png",format(epoch))
+        fig.savefig(sample_rslt_dir + "/{}.png".format(epoch))
         #fig.savefig("images/%s/%d.png" % (self.dataset_dir, epoch))
         plt.close()
 
