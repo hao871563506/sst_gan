@@ -1,6 +1,6 @@
-# SRGAN
+# SST_SRGAN
 
-This folder is for testing srgan source code in a gpu and cpu environment. 
+
 
 ## Runing in local computer
 
@@ -22,6 +22,9 @@ This folder is for testing srgan source code in a gpu and cpu environment.
    pip install pillow
    pip install click
    pip install git
+   # to preprocess sst data from zarr format to npz format we need
+   pip install xarray==0.12.3 zarr gcsfs intake intake-xarray
+   conda install -c conda-forge numcodecs
    ```
 
 4. After that, you can test by running
