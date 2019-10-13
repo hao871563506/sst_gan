@@ -277,7 +277,7 @@ class SRGAN():
         for i in range(r):
             fig = plt.figure()
             plt.imshow(imgs_lr[i])
-            fig.savefig(sample_rslt_dir + "{}_lowers_{}.png".format(epoch, i))
+            fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
             #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_name, epoch, i))
             plt.close()
 
