@@ -50,10 +50,11 @@ class DataLoader():
                 np.savez(sst_dataset_path, name1=np.array(hr), name2=np.array(lr))
                 print("numpy array successfully saved")
 
-        hr,lr = np.load(sst_dataset_path)
+        #hr,lr = np.load(sst_dataset_path)
         data = np.load(sst_dataset_path)
         self.hr = data['name1']
         self.lr = data['name2']
+        print("numpy array successfully loaded")
 
     def load_data(self, batch_size=1, is_testing=False):
         #data_type = "train" if not is_testing else "test"

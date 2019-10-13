@@ -276,18 +276,18 @@ class SRGAN():
         cnt = 0
         for row in range(n_rows):
             for col, image in enumerate([fake_hr, imgs_hr]):
-                axs[row, col].imshow(image[row])
+                axs[row, col].imshow(np.squeeze(image[row], axis=2))
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
-        fig.savefig(sample_rslt_dir + "/{}.png",format(epoch))
+        fig.savefig(sample_rslt_dir + "/{}.png".format(epoch))
         #fig.savefig("images/%s/%d.png" % (self.dataset_dir, epoch))
         plt.close()
 
         # Save low resolution images for comparison
         for i in range(n_rows):
             fig = plt.figure()
-            plt.imshow(imgs_lr[i])
+            plt.imshow(np.squeeze(imgs_lr[i], axis=2))
             fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
             #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_dir, epoch, i))
             plt.close()
