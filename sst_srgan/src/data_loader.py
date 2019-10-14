@@ -13,59 +13,74 @@ class DataLoader():
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor
-        self.use_local_data = True
+        self.use_local_data = False
 
         if self.use_local_data:
             # load from test dataset
             assert local_path is not None
-            sst_dataset_path = local_path + "/{}.npz".format(self.dataset_name)
+            #sst_dataset_path = local_path + "/{}.npz".format(self.dataset_name)
+            self.sst_dataset_path = local_path
         else:
-            sst_dataset_path = os.path.join(SST_DATASETS_PATH, "{}.npz".format(dataset_name))
-            if not os.path.exists(sst_dataset_path):
-                uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id}:010d.zarr'.format(id=tstep) for tstep in range(0, 4088+1, 73)][:10]
-                dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
-                ds = xr.combine_nested(dsets, 'timestep')
-                print(ds)
-                # to use ds.SST[0] to calculate nan value for all timestep
-                num_nans = ds.SST[0].isnull().sum(dim=['x', 'y']).load()
-                sst_valid = ds.SST.where(num_nans == 0, drop=True)
-                print(sst_valid)
-                sst_coarse = sst_valid.coarsen(x=self.downsize_factor[0], y=self.downsize_factor[1]).mean()
-                print(sst_coarse)
+            #sst_dataset_path = os.path.join(SST_DATASETS_PATH, "{}.npz".format(dataset_name))
+            self.sst_dataset_path = SST_DATASETS_PATH
+            if not os.path.exists(SST_DATASETS_PATH):
+                try:
+                    os.makedirs(SST_DATASETS_PATH)
+                except:
+                    print(SST_DATASETS_PATH + " created error")
+            uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id:010d}.zarr'.format(id=tstep) for tstep in range(0, 4088+1, 73)][:10]
+            #uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:10]
+            dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
+            ds = xr.combine_nested(dsets, 'timestep')
+            print(ds)
+            # to use ds.SST[0] to calculate nan value for all timestep
+            num_nans = ds.SST[0].isnull().sum(dim=['x', 'y']).load()
+            sst_valid = ds.SST.where(num_nans == 0, drop=True)
+            print(sst_valid)
+            sst_coarse = sst_valid.coarsen(x=self.downsize_factor[0], y=self.downsize_factor[1]).mean()
+            print(sst_coarse)
 
-                # hr = sst_valid.load().values
-                # lr = sst_coarse.load().values
-                hr = []
-                lr = []
-                for timestep in range(sst_valid.shape[0]):
-                    for region in range(sst_valid.shape[1]):
-                        hr.append(sst_valid[timestep, region].load().values)
-                        lr.append(sst_coarse[timestep, region].load().values)
-                print("got values!")
-                if not os.path.exists(SST_DATASETS_PATH):
-                    try:
-                        os.makedirs(SST_DATASETS_PATH)
-                    except:
-                        print(SST_DATASETS_PATH + " created error")
+            # hr = sst_valid.load().values
+            # lr = sst_coarse.load().values
+            # hr = []
+            # lr = []
+            #if not os.path.exists(SST_DATASETS_PATH):
 
-                np.savez(sst_dataset_path, name1=np.array(hr), name2=np.array(lr))
-                print("numpy array successfully saved")
+            for timestep in range(sst_valid.shape[0]):
+                for region in range(sst_valid.shape[1]):
+                    # hr.append(sst_valid[timestep, region].load().values)
+                    # lr.append(sst_coarse[timestep, region].load().values)
+                    hr = sst_valid[timestep, region].load().values
+                    lr = sst_coarse[timestep, region].load().values
+                    np.savez(SST_DATASETS_PATH + "/{}_{}.npz".format(timestep,region), name1=hr, name2=lr)
+            #print("got values!")
+            
+
+            #np.savez(sst_dataset_path, name1=np.array(hr), name2=np.array(lr))
+            print("numpy array successfully saved")
 
         #hr,lr = np.load(sst_dataset_path)
-        data = np.load(sst_dataset_path)
-        self.hr = data['name1']
-        self.lr = data['name2']
-        print("numpy array successfully loaded")
+        #data = np.load(sst_dataset_path)
+        #self.hr = data['name1']
+        #self.lr = data['name2']
+        #print("numpy array successfully loaded")
 
     def load_data(self, batch_size=1, is_testing=False):
         #data_type = "train" if not is_testing else "test"
-        batch_index = np.random.choice(self.hr.shape[0], size=batch_size)
-        batch_hr = self.hr[batch_index,]
-        batch_lr = self.lr[batch_index,]
+        path = glob(self.sst_dataset_path + "/*")
+        print(path)
+        batch_nparrays = np.random.choice(path, size=batch_size)
+        # batch_index = np.random.choice(self.hr.shape[0], size=batch_size)
+        # batch_hr = self.hr[batch_index,]
+        # batch_lr = self.lr[batch_index,]
         # If training => do random flip
         imgs_hr = []
         imgs_lr = []
-        for hr_image, lr_image in zip(batch_hr, batch_lr):
+        for nparray in batch_nparrays:
+            data = np.load(nparray)
+            hr_image = data['name1']
+            lr_image = data['name2']
+        #for hr_image, lr_image in zip(batch_hr, batch_lr):
             if not is_testing and np.random.random() < 0.5:
                 hr_image = np.fliplr(hr_image)
                 lr_image = np.fliplr(lr_image)
