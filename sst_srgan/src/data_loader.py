@@ -28,7 +28,7 @@ class DataLoader():
                     os.makedirs(SST_DATASETS_PATH)
                 except:
                     print(SST_DATASETS_PATH + " created error")
-            uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id:010d}.zarr'.format(id=tstep) for tstep in range(0, 4088+1, 73)][:10]
+            uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id:010d}.zarr'.format(id=tstep) for tstep in range(0, 4088+1, 73)][:]
             #uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:10]
             dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
             ds = xr.combine_nested(dsets, 'timestep')
