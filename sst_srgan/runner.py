@@ -27,7 +27,7 @@ def main(job_name, dataset_name, upscale_power_factor, n_residual_blocks, epochs
     if local:
         local_dataset_path = repo_dir + "/sst_srgan/datasets/"
     else:
-        local_dataset_path = None
+        local_dataset_path = '/rigel/ocp/users/yl4089/sst_new/sst_superresolution/sst_srgan/datasets'
     gan = SRGAN(dataset_name=dataset_name, upscale_power_factor=upscale_power_factor,
                 n_residual_blocks=n_residual_blocks, local=local, local_path=local_dataset_path)
 

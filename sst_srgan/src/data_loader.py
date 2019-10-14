@@ -13,15 +13,16 @@ class DataLoader():
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor
+        self.use_local_data = True
 
-        if local:
+        if self.use_local_data:
             # load from test dataset
             assert local_path is not None
             sst_dataset_path = local_path + "/{}.npz".format(self.dataset_name)
         else:
             sst_dataset_path = os.path.join(SST_DATASETS_PATH, "{}.npz".format(dataset_name))
             if not os.path.exists(sst_dataset_path):
-                uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:10]
+                uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id}:010d.zarr'.format(id=tstep) for tstep in range(0, 4088+1, 73)][:10]
                 dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
                 ds = xr.combine_nested(dsets, 'timestep')
                 print(ds)
