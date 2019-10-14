@@ -27,9 +27,9 @@
    conda install -c conda-forge numcodecs
    ```
 
-4. After that, you can test by running
+4. After that, you can test by running the following. Currently, we assume to use preprocessed ocean data (numpy array) by default
 
-`python runner.py --job_name=test --dataset_name=img_align_celeba_small --epochs=10 --batch_size=1 --local`
+`python runner.py --job_name=test --dataset_name=hr_lr_2timesteps --epochs=10 --batch_size=1`
 
 5. Check the result under `face_img_rslts` folder!
 
