@@ -13,7 +13,7 @@ class DataLoader():
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor
-        self.use_local_data = False
+        self.use_local_data = True
 
         if self.use_local_data:
             # load from test dataset
@@ -68,7 +68,7 @@ class DataLoader():
     def load_data(self, batch_size=1, is_testing=False):
         #data_type = "train" if not is_testing else "test"
         path = glob(self.sst_dataset_path + "/*")
-        print(path)
+        #print(path)
         batch_nparrays = np.random.choice(path, size=batch_size)
         # batch_index = np.random.choice(self.hr.shape[0], size=batch_size)
         # batch_hr = self.hr[batch_index,]
