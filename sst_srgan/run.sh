@@ -20,6 +20,6 @@ cd /rigel/ocp/users/zw2533/sst_superresolution/sst_srgan
 
 source activate sst
 
-python runner.py --job_name=ocean_4x --dataset_name=hr_lr_2timesteps --epochs=60000 --batch_size=8
+python runner.py --job_name=ocean_4x --dataset_name=hr_lr_2timesteps --epochs=20 --batch_size=4
 
 # End of script

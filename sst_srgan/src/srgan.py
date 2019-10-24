@@ -21,6 +21,7 @@ from keras.layers.convolutional import UpSampling2D, Conv2D
 from keras.applications import VGG19
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
+from keras.models import load_model
 import datetime
 
 ########################################################
@@ -45,6 +46,7 @@ class SRGAN():
         self.channels = 1
         self.hr_height = 512  # High resolution height
         self.hr_width = 512  # High resolution width
+        self.checkpoint_path = 'checkpoints/'
 
         assert isinstance(upscale_power_factor, int), "upscale power factor must be int!"
         self.upscale_power_factor = upscale_power_factor
@@ -58,14 +60,14 @@ class SRGAN():
         # Number of residual blocks in the generator
         self.n_residual_blocks = n_residual_blocks #16
 
-        optimizer = Adam(0.0002, 0.5)
+        self.optimizer = Adam(0.0002, 0.5)
 
         # We use a pre-trained VGG19 model to extract image features from the high resolution
         # and the generated high resolution images and minimize the mse between them
         self.vgg = self.build_vgg()
         self.vgg.trainable = False
         self.vgg.compile(loss='mse',
-            optimizer=optimizer,
+            optimizer=self.optimizer,
             metrics=['accuracy'])
 
         # Configure data loader
@@ -85,7 +87,7 @@ class SRGAN():
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='mse',
-            optimizer=optimizer,
+            optimizer=self.optimizer,
             metrics=['accuracy'])
 
         # Build the generator
@@ -112,7 +114,7 @@ class SRGAN():
         self.combined = Model([img_lr, img_hr], [validity, fake_features])
         self.combined.compile(loss=['binary_crossentropy', 'mse'],
                               loss_weights=[1e-3, 1],
-                              optimizer=optimizer)
+                              optimizer=self.optimizer)
 
     def build_vgg(self):
         """
@@ -205,54 +207,97 @@ class SRGAN():
 
         return Model(d0, validity)
 
-    def train(self, epochs, sample_rslt_dir, batch_size=1, sample_interval=50):
+    def train(self, epochs, sample_rslt_dir, batch_size=1, sample_interval=1, save_interval=1, load_checkpoint=False, checkpoint_id=0):
 
         start_time = datetime.datetime.now()
 
-        for epoch in range(epochs):
+        N = 1
+        start = 0
 
-            # ----------------------
-            #  Train Discriminator
-            # ----------------------
+        if load_checkpoint:
+            print('Models Loading ...')
+            self.discriminator = load_model(self.checkpoint_path + str(checkpoint_id) + '-discriminator.h5')
+            self.generator = load_model(self.checkpoint_path + str(checkpoint_id) + '-generator.h5')
+            # High res. and low res. images
+            img_hr = Input(shape=self.hr_shape)
+            img_lr = Input(shape=self.lr_shape)
 
-            # Sample images and their conditioning counterparts
-            imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
-            imgs_hr = np.expand_dims(imgs_hr, axis=3)
-            imgs_lr = np.expand_dims(imgs_lr, axis=3)
-            # From low res. image generate high res. version
-            fake_hr = self.generator.predict(imgs_lr)
+            # Generate high res. version from low res.
+            fake_hr = self.generator(img_lr)
+            # Extract image features of the generated img
+            fake_hr_temp = Concatenate(axis=-1)([fake_hr, fake_hr])
+            fake_hr_temp = Concatenate(axis=-1)([fake_hr_temp, fake_hr])
+            #fake_hr_temp = K.tile(fake_hr, (1, 1, 1, 3))
+            fake_features = self.vgg(fake_hr_temp)
 
-            valid = np.ones((batch_size,) + self.disc_patch)
-            fake = np.zeros((batch_size,) + self.disc_patch)
+            # For the combined model we will only train the generator
+            self.discriminator.trainable = False
 
-            # Train the discriminators (original images = real / generated = Fake)
-            d_loss_real = self.discriminator.train_on_batch(imgs_hr, valid)
-            d_loss_fake = self.discriminator.train_on_batch(fake_hr, fake)
-            d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+            # Discriminator determines validity of generated high res. images
+            validity = self.discriminator(fake_hr)
 
-            # ------------------
-            #  Train Generator
-            # ------------------
+            self.combined = Model([img_lr, img_hr], [validity, fake_features])
+            self.combined.compile(loss=['binary_crossentropy', 'mse'],
+                                  loss_weights=[1e-3, 1],
+                                  optimizer=self.optimizer)
 
-            # Sample images and their conditioning counterparts
-            imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
-            imgs_hr = np.expand_dims(imgs_hr, axis=3)
-            imgs_lr = np.expand_dims(imgs_lr, axis=3)
-            # The generators want the discriminators to label the generated images as real
-            valid = np.ones((batch_size,) + self.disc_patch)
-            # print(imgs_hr)
-            # Extract ground truth image features using pre-trained VGG19 model
-            imgs_hr_temp = np.repeat(imgs_hr, 3, axis=-1)
-            image_features = self.vgg.predict(imgs_hr_temp)
+            start = checkpoint_id + 1
 
-            # Train the generators
-            g_loss = self.combined.train_on_batch([imgs_lr, imgs_hr], [valid, image_features])
+            print('Models Loaded Successfully! ')
 
-            elapsed_time = datetime.datetime.now() - start_time
-            # Plot the progress
-            print("%d time: %s" % (epoch, elapsed_time))
+        for epoch in range(start, epochs):
+
+            for b_id in range(int(N / batch_size) + 1):
+		# ----------------------
+		#  Train Discriminator
+		# ----------------------
+
+		# Sample images and their conditioning counterparts
+                imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+                imgs_hr = np.expand_dims(imgs_hr, axis=3)
+                imgs_lr = np.expand_dims(imgs_lr, axis=3)
+		# From low res. image generate high res. version
+                fake_hr = self.generator.predict(imgs_lr)
+
+                valid = np.ones((batch_size,) + self.disc_patch)
+                fake = np.zeros((batch_size,) + self.disc_patch)
+
+		# Train the discriminators (original images = real / generated = Fake)
+                d_loss_real = self.discriminator.train_on_batch(imgs_hr, valid)
+                d_loss_fake = self.discriminator.train_on_batch(fake_hr, fake)
+                d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+
+		# ------------------
+		#  Train Generator
+		# ------------------
+
+		# Sample images and their conditioning counterparts
+                imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+                imgs_hr = np.expand_dims(imgs_hr, axis=3)
+                imgs_lr = np.expand_dims(imgs_lr, axis=3)
+		# The generators want the discriminators to label the generated images as real
+                valid = np.ones((batch_size,) + self.disc_patch)
+		# print(imgs_hr)
+		# Extract ground truth image features using pre-trained VGG19 model
+                imgs_hr_temp = np.repeat(imgs_hr, 3, axis=-1)
+                image_features = self.vgg.predict(imgs_hr_temp)
+
+		# Train the generators
+                g_loss = self.combined.train_on_batch([imgs_lr, imgs_hr], [valid, image_features])
+
+                elapsed_time = datetime.datetime.now() - start_time
+		# Plot the progress
+                print("epoch %d batch %d  time: %s" % (epoch, b_id, elapsed_time))
+
             if epoch % sample_interval == 0:
                 self.sample_images(epoch, sample_rslt_dir)
+
+            if epoch % save_interval == 0:
+                print('Saving Models ...')
+                self.discriminator.save(self.checkpoint_path + str(epoch) + '-discriminator.h5')
+                self.generator.save(self.checkpoint_path + str(epoch) + '-generator.h5')
+                #self.combined.save(self.checkpoint_path + str(epoch) + '-combined.h5')
+                print('Models Saved Successfully!')
 
     def sample_images(self, epoch, sample_rslt_dir):
         if not os.path.exists(sample_rslt_dir):
@@ -276,7 +321,7 @@ class SRGAN():
         cnt = 0
         for row in range(n_rows):
             for col, image in enumerate([fake_hr, imgs_hr]):
-                axs[row, col].imshow(np.squeeze(image[row], axis=2))
+                axs[row, col].imshow(np.squeeze(image[row], axis=2), vmin=-2, vmax=35)
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
@@ -287,7 +332,7 @@ class SRGAN():
         # Save low resolution images for comparison
         for i in range(n_rows):
             fig = plt.figure()
-            plt.imshow(np.squeeze(imgs_lr[i], axis=2))
+            plt.imshow(np.squeeze(imgs_lr[i], axis=2), vmin=-2, vmax=35)
             fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
             #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_dir, epoch, i))
             plt.close()
