@@ -211,7 +211,7 @@ class SRGAN():
 
         start_time = datetime.datetime.now()
 
-        N = 1
+        N = 100
         start = 0
 
         if load_checkpoint:
@@ -303,9 +303,15 @@ class SRGAN():
         if not os.path.exists(sample_rslt_dir):
             os.makedirs(sample_rslt_dir)
         #os.makedirs('images/%s' % self.dataset_dir, exist_ok=True)
-        n_rows, n_cols = 2, 2
+        n_rows, n_cols = 5, 2
 
-        imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2, is_testing=True)
+        imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=n_rows, is_testing=True)
+        vmin = np.zeros((n_rows,))
+        vmax = np.zeros((n_rows,))
+        for i in range(n_rows):
+            vmin[i] = imgs_hr[i].min()
+            vmax[i] = imgs_hr[i].max()
+
         imgs_hr = np.expand_dims(imgs_hr, axis=3)
         imgs_lr = np.expand_dims(imgs_lr, axis=3)
         fake_hr = self.generator.predict(imgs_lr)
@@ -321,7 +327,7 @@ class SRGAN():
         cnt = 0
         for row in range(n_rows):
             for col, image in enumerate([fake_hr, imgs_hr]):
-                axs[row, col].imshow(np.squeeze(image[row], axis=2), vmin=-2, vmax=35)
+                axs[row, col].imshow(np.squeeze(image[row], axis=2), vmin=vmin[row], vmax=vmax[row])
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
@@ -332,7 +338,7 @@ class SRGAN():
         # Save low resolution images for comparison
         for i in range(n_rows):
             fig = plt.figure()
-            plt.imshow(np.squeeze(imgs_lr[i], axis=2), vmin=-2, vmax=35)
+            plt.imshow(np.squeeze(imgs_lr[i], axis=2), vmin=vmin[i], vmax=vmax[i])
             fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
             #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_dir, epoch, i))
             plt.close()
