@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 SST_DATASETS_PATH = "./numpy_array"
 
 class DataLoader():
-    def __init__(self, dataset_name, img_res=(512, 512), downsize_factor=(4, 4), local=False, local_path=None):
+    def __init__(self, dataset_name, img_res=(512, 512), downsize_factor=(4, 4), local_path=None):
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor

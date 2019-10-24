@@ -41,7 +41,7 @@ import keras.backend as K
 
 
 class SRGAN():
-    def __init__(self, dataset_name, upscale_power_factor, n_residual_blocks, local, local_path=None):
+    def __init__(self, dataset_name, upscale_power_factor, n_residual_blocks, local_path=None):
         # Input shape
         self.channels = 1
         self.hr_height = 512  # High resolution height
@@ -74,7 +74,7 @@ class SRGAN():
         self.dataset_name = dataset_name  #'img_sst'
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.hr_height, self.hr_width),
-                                      local=local, local_path=local_path)
+                                      local_path=local_path)
 
         # Calculate output shape of D (PatchGAN)
         patch = int(self.hr_height / 2**4)
@@ -303,7 +303,7 @@ class SRGAN():
         if not os.path.exists(sample_rslt_dir):
             os.makedirs(sample_rslt_dir)
         #os.makedirs('images/%s' % self.dataset_dir, exist_ok=True)
-        n_rows, n_cols = 5, 2
+        n_rows, n_cols = 1, 2
 
         imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=n_rows, is_testing=True)
         vmin = np.zeros((n_rows,))
@@ -344,7 +344,3 @@ class SRGAN():
             plt.close()
 
 
-if __name__ == '__main__':
-    gan = SRGAN(dataset_name='img_sst', upscale_power_factor=4, n_residual_blocks=16)
-    #gan.train(epochs=30000, batch_size=1, sample_interval=50)
-    gan.train(epochs=10, batch_size=1, sample_interval=50)
