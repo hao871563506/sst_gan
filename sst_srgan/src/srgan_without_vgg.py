@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 #######################################################
 
 import sys
-from src.data_loader import DataLoader
+from src.data_loader_1picture import DataLoader
 import numpy as np
 import os
 
@@ -212,7 +212,7 @@ class SRGAN():
 
         start_time = datetime.datetime.now()
 
-        N = 100
+        N = 50
         start = 0
 
         if load_checkpoint:
@@ -282,8 +282,9 @@ class SRGAN():
 		# Extract ground truth image features using pre-trained VGG19 model
                 # imgs_hr_temp = np.repeat(imgs_hr, 3, axis=-1)
                 # image_features = self.vgg.predict(imgs_hr_temp)
-                image_features = imgs_hr.flatten()
-
+                #print(imgs_hr.shape)
+                image_features = imgs_hr.reshape(imgs_hr.shape[0], -1)
+                #print(image_features.shape)
 		# Train the generators
                 g_loss = self.combined.train_on_batch([imgs_lr, imgs_hr], [valid, image_features])
 
@@ -329,7 +330,7 @@ class SRGAN():
         cnt = 0
         for row in range(n_rows):
             for col, image in enumerate([fake_hr, imgs_hr]):
-                axs[row, col].imshow(np.squeeze(image[row], axis=2))
+                axs[row, col].imshow(np.squeeze(image[0], axis=2))
                 axs[row, col].set_title(titles[col])
                 axs[row, col].axis('off')
             cnt += 1
@@ -340,7 +341,7 @@ class SRGAN():
         # Save low resolution images for comparison
         for i in range(n_rows):
             fig = plt.figure()
-            plt.imshow(np.squeeze(imgs_lr[i], axis=2))
+            plt.imshow(np.squeeze(imgs_lr[0], axis=2))
             fig.savefig(sample_rslt_dir + "/{}_lowers_{}.png".format(epoch, i))
             #fig.savefig('images/%s/%d_lowres%d.png' % (self.dataset_dir, epoch, i))
             plt.close()
