@@ -6,8 +6,8 @@ from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 
-np_array_save_path = "./numpy_array"
-path = os.path.join(np_array_save_path, "hr_lr_1region.npz")
+np_array_save_path = "./datasets"
+path = os.path.join(np_array_save_path, "hr_lr_2timesteps.npz")
 
 
 class DataLoader():
@@ -16,7 +16,7 @@ class DataLoader():
         self.img_res = img_res
         self.downsize_factor = downsize_factor
         if not os.path.exists(path):
-            uris = [f'gcs://pangeo-ocean-ml/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:]
+            uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id:010d}.zarr'.format(id=tstep) for tstep in range(0, 8979+1, 73)][:]
             dsets = [xr.open_zarr(fsspec.get_mapper(uri), consolidated=True) for uri in uris]
             ds = xr.combine_nested(dsets, 'timestep')
             print(ds)

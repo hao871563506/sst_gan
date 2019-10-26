@@ -15,15 +15,15 @@ class DataLoader():
         self.dataset_name = dataset_name
         self.img_res = img_res
         self.downsize_factor = downsize_factor
-        uris = ['/rigel/ocp/projects/shared_data/sst_superresolution/LLC4320/SST.{tstep:010d}.zarr' for tstep in range(0, 4088+1, 73)][:2]
-        dsets = [xr.open_zarr(uri, consolidated=True) for uri in uris]
+        uris = ['gcs://pangeo-ocean-ml/LLC4320/SST.{id:010d}.zarr'.format(id=tstep) for tstep in range(0, 8979+1, 73)][:2]
+        dsets = [xr.open_zarr(fsspec.get_mapper(uri)) for uri in uris]
         ds = xr.combine_nested(dsets, 'timestep')
         print(ds)
         sst_coarse = ds.SST.coarsen(x=self.downsize_factor[0], y=self.downsize_factor[1]).mean()       
         print(sst_coarse)
         region = 306
         self.hr = ds.SST[0, region].load().values
-        self.lr = sst_coarse[timestep, region].load().values
+        self.lr = sst_coarse[0, region].load().values
 
     def load_data(self, batch_size=1, is_testing=False):
         return np.array([self.hr]), np.array([self.lr])
