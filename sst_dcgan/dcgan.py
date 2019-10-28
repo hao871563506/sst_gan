@@ -14,11 +14,25 @@ import sys
 
 import numpy as np
 
+#from data_loader_1picture import DataLoader
+
+import os
+os.chdir('D:\\Github\\sst_superresolution\sst_dcgan')
+os.getcwd()
+
+#X_train = np.load('./X_train.npy')
+
+
+
+
+
+
+
 class DCGAN():
     def __init__(self):
         # Input shape
-        self.img_rows = 28
-        self.img_cols = 28
+        self.img_rows = 32
+        self.img_cols = 32
         self.channels = 1
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 100
@@ -53,8 +67,8 @@ class DCGAN():
 
         model = Sequential()
 
-        model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
-        model.add(Reshape((7, 7, 128)))
+        model.add(Dense(128 * 8 * 8, activation="relu", input_dim=self.latent_dim))
+        model.add(Reshape((8, 8, 128)))
         model.add(UpSampling2D())
         model.add(Conv2D(128, kernel_size=3, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
@@ -106,12 +120,15 @@ class DCGAN():
     def train(self, epochs, batch_size=128, save_interval=50):
 
         # Load the dataset
-        (X_train, _), (_, _) = mnist.load_data()
-
+        #(X_train, _), (_, _) = mnist.load_data()
+        #X_train = np.load('./X_train3.npy')
+        X_train = np.load('./region306.npy')
         # Rescale -1 to 1
-        X_train = X_train / 127.5 - 1.
+        #X_train = X_train / 127.5 - 1.
+        #X_train = np.expand_dims(X_train, axis=3)
+        #X_train = np.expand_dims(X_train, axis=0)
         X_train = np.expand_dims(X_train, axis=3)
-
+        
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
         fake = np.zeros((batch_size, 1))
@@ -150,7 +167,7 @@ class DCGAN():
                 self.save_imgs(epoch)
 
     def save_imgs(self, epoch):
-        r, c = 5, 5
+        r, c = 2, 2
         noise = np.random.normal(0, 1, (r * c, self.latent_dim))
         gen_imgs = self.generator.predict(noise)
 
@@ -161,7 +178,7 @@ class DCGAN():
         cnt = 0
         for i in range(r):
             for j in range(c):
-                axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+                axs[i,j].imshow(gen_imgs[cnt, :,:,0])#, cmap='gray')
                 axs[i,j].axis('off')
                 cnt += 1
         fig.savefig("images/mnist_%d.png" % epoch)
@@ -170,4 +187,4 @@ class DCGAN():
 
 if __name__ == '__main__':
     dcgan = DCGAN()
-    dcgan.train(epochs=4000, batch_size=32, save_interval=50)
+    dcgan.train(epochs=1001, batch_size=1, save_interval=500)
